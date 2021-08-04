@@ -2,7 +2,7 @@ import React from "react";
 import axios from "axios";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-
+import myip from "../global";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setUserId,
@@ -17,22 +17,18 @@ import {
 const Login = () => {
   const dispatch = useDispatch();
   const userEmail = useSelector((state) => state.userReducer.userEmail);
-  const username = useSelector((state) => state.userReducer.username);
   const userPassword = useSelector((state) => state.userReducer.userPassword);
-  const userId = useSelector((state) => state.userReducer.userId);
-  const userProfile = useSelector((state) => state.userReducer.userProfile);
 
+  //Makes api post request to decrease qty of an item in the user cart
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("form: " + userEmail + ", " + userPassword);
     const data = {
       userEmail: userEmail,
       userPassword: userPassword,
     };
     axios
-      .post("http://localhost:5000/login", data)
+      .post(`http://${myip}:5000/login`, data)
       .then((res) => {
-        console.log("login res:" + JSON.stringify(res.data));
         if (res.data) {
           dispatch(setIsLoggedIn(true));
           dispatch(setUserId(res.data._id));
@@ -40,7 +36,7 @@ const Login = () => {
           dispatch(setUsername(res.data.username));
           dispatch(setUserProfile(res.data.userProfile));
           dispatch(setCartItems(res.data.userCart));
-          window.location.replace("http://localhost:3000/");
+          window.location.replace(`http://${myip}:3000/`);
         } else {
           alert("Email or password is incorrect");
         }

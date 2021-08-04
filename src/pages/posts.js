@@ -7,14 +7,18 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Figure from "react-bootstrap/Figure";
 import ListGroup from "react-bootstrap/ListGroup";
+import myip from "../global";
+import { Redirect} from "react-router-dom";
+
 const Post = () => {
   const userId = useSelector((state) => state.userReducer.userId);
   const isLoggedIn = useSelector((state) => state.userReducer.isLoggedIn);
   const [posts, setPosts] = React.useState([]);
 
+  //Makes api get request to get all user posts  
   const handleGetUserPost = () => {
     axios
-      .get(`http://localhost:5000/get-my-post?userId=${userId}`)
+      .get(`http://${myip}:5000/get-my-post?userId=${userId}`)
       .then((response) => {
         console.log(response.data);
         setPosts(response.data);
@@ -26,8 +30,10 @@ const Post = () => {
     handleGetUserPost();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  //Redirect if user hasnt log in yet
   if (!isLoggedIn) {
-    window.location.replace("http://localhost:3000/");
+    return <Redirect to="/authenticate"/>;
   }
   return (
     <div className="center-page">

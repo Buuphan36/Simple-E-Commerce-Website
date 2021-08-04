@@ -41,15 +41,12 @@ const userReducer = (state = INITIAL_STATE, action) => {
         isLoggedIn: action.isLoggedIn,
       };
     case "USER_SET_CART_ITEMS":
+      console.log("action: " + JSON.stringify(action))
       return {
         ...state,
         cartItems: action.cartItems,
       }
-      case "USER_RESET_CART_ITEMS":
-        return {
-          ...state,
-          cartItems: [],
-        }
+      
     case "USER_SET_LOG_OUT":
       return INITIAL_STATE;
 

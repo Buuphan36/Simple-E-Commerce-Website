@@ -7,6 +7,8 @@ import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Figure from "react-bootstrap/Figure";
+import myip from "../global";
+import { Redirect} from "react-router-dom";
 
 const MakePost = () => {
   const dispatch = useDispatch();
@@ -20,6 +22,7 @@ const MakePost = () => {
   const price = useSelector((state) => state.postReducer.price);
   const description = useSelector((state) => state.postReducer.description);
 
+  //Makes api post request to store user post
   const handlePosting = async (event) => {
     event.preventDefault();
     if (name && price && description) {
@@ -32,33 +35,38 @@ const MakePost = () => {
           file_name: file_name,
         };
         axios
-          .post("http://localhost:5000/create-post", data)
-          .then((res) => {})
+          .post(`http://${myip}:5000/create-post`, data)
+          .then((res) => {
+            if(res.data.success){
+              handleUploadImage();
+              alert(res.data.error);
+              window.location.replace(`http://${myip}:3000/my-posts`);
+            }
+          })
           .catch(() => console.log("Failed to submit!"));
-        handleUploadImage();
-        alert("Your form have been submitted");
-        window.location.replace("http://localhost:3000/my-posts");
     } else {
       alert("One of the fields is empty!");
     }
   };
-
+  //Makes api post request to save image/file to database  
   const handleUploadImage = () => {
     const formData = new FormData();
     formData.append("file", file);
-    axios.post("http://localhost:5000/upload-image", formData).then((res) => {
+    axios.post(`http://${myip}:5000/upload-image`, formData).then((res) => {
       console.log("Image is uploaded");
     });
   };
 
+  //Sets files appropriately + create preview image
   const fileUploaded = (event) => {
     setPreviewFile(URL.createObjectURL(event.target.files[0]));
     setFile(event.target.files[0]);
     setFileName(event.target.files[0].name);
   };
 
+  //Redirect if user hasnt log in yet
   if (!isLoggedIn) {
-    window.location.replace("http://localhost:3000/authenticate");
+    return <Redirect to="/authenticate"/>;
   }
 
   return (

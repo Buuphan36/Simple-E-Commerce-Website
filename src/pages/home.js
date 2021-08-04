@@ -2,12 +2,12 @@ import React from "react";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import Card from "react-bootstrap/Card";
-import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Figure from "react-bootstrap/Figure";
 import { setCartItems } from "../redux/actions/userActions";
+import myip from "../global";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -15,17 +15,28 @@ const Home = () => {
   const userId = useSelector((state) => state.userReducer.userId);
   const cartItems = useSelector((state) => state.userReducer.cartItems);
 
-  const checkElement = (element) => {
-    console.log("element: " + JSON.stringify(element));
-    for (let i = 0; i < cartItems.length; i++) {
-      console.log(`${i}: ${JSON.stringify(cartItems[i].itemId)}`);
+  //Makes api post request to decrease qty of an item in the user cart
+  const handleGetUserCart = () => {
+    axios
+      .get(`http://${myip}:5000/get-my-cart?userId=${userId}`)
+      .then((res) => {
+        dispatch(setCartItems(res.data));
+      })
+      .catch(() => console.log("Failed to fetch items"));
+  };
 
+  //Returns the index of selected item if it is in the user cart
+  //Returns -1 if item is not found
+  const checkElement = (element) => {
+    for (let i = 0; i < cartItems.length; i++) {
       if (cartItems[i].itemId === element) {
         return i;
       }
     }
     return -1;
   };
+
+  //Adds item to thr use cart
   const handleAddButton = (item) => {
     if (userId) {
       const data = {
@@ -39,35 +50,31 @@ const Home = () => {
         creator_name: item.creator_name,
       };
       let itemIndex = checkElement(item._id);
-      //console.log("cart: " + JSON.stringify(cartItems));
-      console.log("index: " + itemIndex);
       if (itemIndex !== -1) {
         const data2 = {
           userId: userId,
           itemId: item._id,
           quantity: cartItems[itemIndex].quantity,
         };
-        console.log("data2: " + JSON.stringify(data2));
         axios
-          .post("http://localhost:5000/cart-item-increase-qty", data2)
+          .post(`http://${myip}:5000/cart-item-increase-qty`, data2)
           .then((res) => {
             dispatch(setCartItems(res.data));
-            console.log("add item res: " + JSON.stringify(res));
           });
       } else {
-        axios.post("http://localhost:5000/add-item", data).then((res) => {
+        axios.post(`http://${myip}:5000/add-item`, data).then((res) => {
           dispatch(setCartItems(res.data));
-          console.log("add item res: " + JSON.stringify(res.data));
         });
       }
     } else {
-      window.location.replace("http://localhost:3000/authenticate");
+      window.location.replace(`http://${myip}:3000/authenticate`);
     }
   };
 
+  //Makes api get request to update user cart
   const handleGetUserPost = () => {
     axios
-      .get("http://localhost:5000/get-all-items")
+      .get(`http://${myip}:5000/get-all-items`)
       .then((res) => {
         console.log(res.data);
         setPosts(res.data);
@@ -77,6 +84,7 @@ const Home = () => {
 
   React.useEffect(() => {
     handleGetUserPost();
+    handleGetUserCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,7 +112,7 @@ const Home = () => {
                     <p>${item.price}</p>
                     <p>{item.description}</p>
                     <p>Seller: {item.creator_name}</p>
-                    <Button onClick={() => handleAddButton(item)}>Add</Button>
+                    <Button variant="dark" onClick={() => handleAddButton(item)}>Add to Cart</Button>
                   </div>
                 </Col>
               </Row>

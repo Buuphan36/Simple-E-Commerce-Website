@@ -23,7 +23,7 @@ const NavBar = () => {
   const userProfile = useSelector((state) => state.userReducer.userProfile);
   const cartItems = useSelector((state) => state.userReducer.cartItems);
 
-  console.log("username: " + username);
+  //console.log(" cart: " + JSON.stringify(cartItems));
 
   const handleSignOut = () => {
     dispatch({ type: "USER_SET_LOG_OUT" });
@@ -42,7 +42,7 @@ const NavBar = () => {
     <div>
       <Navbar
         collapseOnSelect
-        bg="dark"
+        bg="danger"
         variant="dark"
         expand="lg"
         className="nav-padding"
@@ -106,7 +106,7 @@ const NavBar = () => {
             </Nav.Link>
             {!isLoggedIn && (
               <Nav>
-                <Button href="/authenticate" variant="outline-light">
+                <Button href="/authenticate" variant="dark">
                   Log In
                 </Button>
               </Nav>

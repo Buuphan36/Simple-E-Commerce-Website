@@ -3,6 +3,7 @@ import axios from "axios";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { useDispatch, useSelector } from "react-redux";
+import myip from "../global";
 
 const Signup = () => {
   const defaultImage = "default-profile.png";
@@ -11,6 +12,7 @@ const Signup = () => {
   const [userPassword, setUserPassword] = React.useState("");  
   const [userPassword2,setUserPassword2] = React.useState("");
 
+  //Makes api post request to create an account for the user
   const handleSubmit = (e) => {
     e.preventDefault();
     if (userPassword !== userPassword2){
@@ -26,10 +28,10 @@ const Signup = () => {
     };
     console.log("form: " + data);
     axios
-      .post("http://localhost:5000/sign-up", data)
+      .post(`http://${myip}:5000/sign-up`, data)
       .then((res) => {
         if(res.data){
-          window.location.replace("http://localhost:3000/authenticate");
+          window.location.replace(`http://${myip}:3000/authenticate`);
         }else{
           alert("Failed to sign up");
         }

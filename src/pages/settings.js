@@ -10,11 +10,11 @@ import {
   setUsername,
   setUserEmail,
   setUserPassword,
-  setUserId,
   setUserProfile,
-  setIsLoggedIn,
 } from "../redux/actions/userActions";
+import myip from "../global";
 import axios from "axios";
+import { Redirect} from "react-router-dom";
 
 const Settings = () => {
   const dispatch = useDispatch();
@@ -26,14 +26,16 @@ const Settings = () => {
   const [password, setPassword] = React.useState("");
   const userId = useSelector((state) => state.userReducer.userId);
   const userProfile = useSelector((state) => state.userReducer.userProfile);
+  const isLoggedIn = useSelector((state) => state.userReducer.isLoggedIn);
   const [errorMessage1, setErrorMessage1] = React.useState("");
   const [errorMessage2, setErrorMessage2] = React.useState("");
   const [errorMessage3, setErrorMessage3] = React.useState("");
   const [errorMessage4, setErrorMessage4] = React.useState("");
 
+  //Makes api get request to get information about the user
   const getUserInfo = () => {
     axios
-      .get(`http://localhost:5000/get-user-info?id=${userId}`)
+      .get(`http://${myip}:5000/get-user-info?id=${userId}`)
       .then((res) => {
         setFileName(res.data.userProfile);
         setUserName(res.data.username);
@@ -43,31 +45,20 @@ const Settings = () => {
       .catch(() => alert("Failed to load user profile"));
   };
 
+
   const fileUploaded = (event) => {
     setPreviewFile(URL.createObjectURL(event.target.files[0]));
     setFile(event.target.files[0]);
     setFileName(event.target.files[0].name);
   };
 
-  const deleteFile = (profileName) => {
-    axios
-      .get(`http://localhost:5000/delete-image?imageName=${profileName}`)
-      .then((res) => {
-        if (res.data.success) {
-          console.log("Successfully removed the file!");
-        } else {
-          console.log("Failed removed the file!");
-        }
-      })
-      .catch(() => console.log("Failed to send a request"));
-  };
-
+  //Makes api post request to change user profile  
   const changeImage = (e) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append("file", file);
     axios
-      .post(`http://localhost:5000/change-profile?userId=${userId}`, formData)
+      .post(`http://${myip}:5000/change-profile?userId=${userId}`, formData)
       .then((res) => {
         console.log("image res:" + JSON.stringify(res.data));
         if (res.data.success) {
@@ -80,6 +71,7 @@ const Settings = () => {
       .catch(() => alert("Failed to send a request"));
   };
 
+  //Makes api post request to change username
   const changeUsername = (e) => {
     e.preventDefault();
     const data = {
@@ -87,7 +79,7 @@ const Settings = () => {
       username: username,
     };
     axios
-      .post("http://localhost:5000/change-username", data)
+      .post(`http://${myip}:5000/change-username`, data)
       .then((res) => {
         console.log("username res:" + JSON.stringify(res.data));
         if (res.data.success) {
@@ -100,6 +92,7 @@ const Settings = () => {
       .catch(() => alert("Failed to send a request"));
   };
 
+  //Makes api post request to change user email
   const changeUserEmail = (e) => {
     e.preventDefault();
     const data = {
@@ -107,7 +100,7 @@ const Settings = () => {
       userEmail: email,
     };
     axios
-      .post("http://localhost:5000/change-email", data)
+      .post(`http://${myip}:5000/change-email`, data)
       .then((res) => {
         console.log("login res:" + JSON.stringify(res.data));
         if (res.data.success) {
@@ -120,6 +113,7 @@ const Settings = () => {
       .catch(() => alert("Failed to send a request"));
   };
 
+  //Makes api post request to change user password
   const changeUserPassword = (e) => {
     e.preventDefault();
     const data = {
@@ -127,7 +121,7 @@ const Settings = () => {
       userPassword: password,
     };
     axios
-      .post("http://localhost:5000/change-password", data)
+      .post(`http://${myip}:5000/change-password`, data)
       .then((res) => {
         console.log("login res:" + JSON.stringify(res.data));
         if (res.data.success) {
@@ -139,12 +133,16 @@ const Settings = () => {
       })
       .catch(() => alert("Failed to send a request"));
   };
-
+  
   React.useEffect(() => {
     getUserInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  //Redirect if user hasnt log in yet
+  if (!isLoggedIn) {
+    return <Redirect to="/authenticate"/>;
+  }
   return (
     <Form className="m-5" style={{ color: "#fff" }}>
       <Card.Title>Profile Picture</Card.Title>

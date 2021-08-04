@@ -17,18 +17,11 @@ const dbName = "Demo";
 // Create a new MongoClient
 const client = new MongoClient(url, { useUnifiedTopology: true });
 
-// const deleteImage = () =>{
-
-// }
-
-// const storeImage = () =>{
-
-// }
-
 client.connect((error) => {
   console.log("Connected to Mongodb!");
   const db = client.db(dbName);
 
+  //handles images/files storing
   app.post("/upload-image", (req, res) => {
     if (req.files === null) {
     } else {
@@ -41,35 +34,12 @@ client.connect((error) => {
     }
   });
 
-  app.get("/delete-image", (req, res) => {
-    if (!req.query.imageName) {
-      console.log("No file received");
-      return res.status(500).json("error in delete");
-    } else {
-      const fileName = req.query.imageName;
-      if (fileName !== "default-profile") {
-        try {
-          fs.unlinkSync(`../public/${fileName}`);
-          console.log("successfully deleted");
-          return res.status(200).send("Successfully! Image has been Deleted");
-        } catch (err) {
-          // handle the error
-          return res.status(400).send(err);
-        }
-      }
-    }
-  });
-
+  //returns general information about the user
   app.get("/get-user-info", (req, res) => {
     console.log("info: " + JSON.stringify(req.query));
-    console.log("info: " + JSON.stringify(req.body));
-    //res.send(req.query)
-    //const query = { _id: new ObjectID(req.query)};
-    //console.log("query: " + JSON.stringify(query));
     db.collection("users")
-      .findOne(req.body)
+      .findOne(req.query.userId)
       .then((result) => {
-        console.log("user info:" + JSON.stringify(result));
         const data = {
           userId: result._id,
           username: result.username,
@@ -81,17 +51,18 @@ client.connect((error) => {
       });
   });
 
+  //Checks if the user login info matches any account in the database
   app.post("/login", (req, res) => {
     console.log("login: " + JSON.stringify(req.body));
     db.collection("users")
       .findOne(req.body)
       .then((result) => {
-        console.log("login: " + JSON.stringify(result));
         res.send(result);
       })
       .catch(() => console.log("Failed to send"));
   });
 
+  //Creates an account in the database
   app.post("/sign-up", (req, res) => {
     db.collection("users")
       .insertOne(req.body)
@@ -99,6 +70,7 @@ client.connect((error) => {
       .catch(() => res.send(false));
   });
 
+  //handles add item request
   app.post("/add-item", (req, res) => {
     console.log("item: " + JSON.stringify(req.body.userId));
     const item = {
@@ -112,36 +84,45 @@ client.connect((error) => {
     };
     const query = { _id: new ObjectID(req.body.userId) };
     const values = { $push: { userCart: item } };
+
+    //updates/pushes item into user cart
     db.collection("users")
       .updateOne(query, values)
-      .then((result2) => {
-        console.log(result2);
-      })
       .catch((e) => console.log(e));
 
-    //returns
+    //returns updated user cart
     db.collection("users")
       .findOne(query)
-      .then((result3) => {
-        console.log(result3);
-        res.send(result3.userCart);
+      .then((result) => {
+        console.log(result);
+        res.send(result.userCart);
       })
       .catch((e) => console.log(e));
   });
 
+
+  //Handles deleting item from user cart
   app.post("/remove-item", (req, res) => {
     const query = { _id: new ObjectID(req.body.userId) };
     const values = { $pull: { userCart: { itemId: req.body.itemId } } };
     console.log("remove: " + JSON.stringify(req.body));
+
+    //Updates user cart
     db.collection("users")
       .updateOne(query, values)
+      .catch((e) => console.log(e));
+
+    //returns updated user cart
+    db.collection("users")
+      .findOne(query)
       .then((result) => {
-        console.log("remove: " + JSON.stringify(result));
-        res.send(result);
+        console.log(result);
+        res.send(result.userCart);
       })
       .catch((e) => console.log(e));
   });
 
+  //handles decreasing item quantity
   app.post("/cart-item-decrease-qty", (req, res) => {
     db.collection("users")
       .findOneAndUpdate(
@@ -156,18 +137,19 @@ client.connect((error) => {
         }
       )
       .then((result) => {
-        console.log("remove: " + JSON.stringify(result));
-        res.send(result);
+        //returns updated user cart
+        db.collection("users")
+          .findOne({ _id: new ObjectID(req.body.userId) })
+          .then((result2) => {
+            res.send(result2.userCart);
+          });
       })
       .catch((e) => console.log(e));
   });
 
+  //handles increasing item quantity
   app.post("/cart-item-increase-qty", (req, res) => {
-    //const query = { _id: new ObjectID(req.body.userId), userCart: {item: req.body.itemId}};
-    //const values = {$set: {"userCart.$.quantity": {quantity: (req.body.quantity-1)}}}
     console.log("add qty: " + JSON.stringify(req.body));
-    //console.log("remove qty values" + JSON.stringify(values));
-
     db.collection("users")
       .findOneAndUpdate(
         {
@@ -180,72 +162,89 @@ client.connect((error) => {
           },
         }
       )
-      //.updateOne(query, values)
       .then((result) => {
-        console.log("add: " + JSON.stringify(result));
+        //returns updated user cart
         db.collection("users")
-        .findOne( {_id: new ObjectID(req.body.userId)})
-        .then((result1) => {
-          console.log(result1);
-          res.send(result1.userCart);
-        });
+          .findOne({ _id: new ObjectID(req.body.userId) })
+          .then((result2) => {
+            console.log(result2);
+            res.send(result2.userCart);
+          });
       })
       .catch((e) => console.log(e));
   });
 
+  //Returns user cart
   app.get("/get-my-cart", (req, res) => {
+    console.log("my cart : " + JSON.stringify(req.query));
     db.collection("users")
-      .findOne(req.body)
+      .findOne({ _id: new ObjectID(req.query.userId) })
       .then((result) => {
-        console.log(result);
         res.send(result.userCart);
       });
   });
 
+  //Returns user orders
   app.get("/get-my-orders", (req, res) => {
     db.collection("orders")
-      .find(req.query)
+      .find(req.query.userId)
       .toArray()
       .then((result) => {
-        console.log(result);
         res.send(result);
       })
       .catch((e) => console.log(e));
   });
 
+  //Returns all items in the database
   app.get("/get-all-items", (req, res) => {
     db.collection("products")
       .find({})
       .toArray()
       .then((result) => {
-        console.log(result);
         res.send(result);
       })
       .catch((e) => console.log(e));
   });
 
+  //Handles create new orders
   app.post("/create-orders", (req, res) => {
+    //Creates a record of the order
     db.collection("orders")
       .insertOne(req.body)
-      .then(() => {
-        res.send("success");
+      .then((result)=>{
+        //Clears user cart
+        db.collection("users")
+        .updateOne(
+          { _id: new ObjectID(req.body.userId) },
+          { $set: { userCart: [] } }
+        )
+        .then((result) => {
+          res.send([]);
+        })
+        .catch((e) => console.log(e));
       })
       .catch((e) => console.log(e));
   });
 
+  //Handles create new post/product
   app.post("/create-post", (req, res) => {
     console.log("post: " + JSON.stringify(req.body));
     db.collection("products")
       .insertOne(req.body)
       .then(() => {
-        console.log("New post");
+        res.send({
+          success: true,
+          error: "Your post has been submitted!",
+        })
       })
       .catch((e) => console.log(e));
   });
 
+  //Returns user posts
   app.get("/get-my-post", (req, res) => {
+    console.log("post: " + JSON.stringify(req.query));
     db.collection("products")
-      .find(req.body)
+      .find({creator_id: req.query.userId})
       .toArray()
       .then((result) => {
         console.log(result);
@@ -254,6 +253,7 @@ client.connect((error) => {
       .catch((e) => console.log(e));
   });
 
+  //Handles user profile picture changing
   app.post("/change-profile", (req, res) => {
     if (req.files === null) {
       res.send({
@@ -262,28 +262,23 @@ client.connect((error) => {
       });
     } else {
       const file = req.files.file;
-      //stores user profile pictures into the database
+      //Stores user profile pictures into the database
       file.mv(`../public/${file.name}`, (err) => {
         if (err) {
           console.error(err);
         } else {
           const query = { _id: new ObjectID(req.query.userId) };
           const values = { $set: { userProfile: file.name } };
-          console.log("File quaeries: " + JSON.stringify(query));
-          console.log("File values: " + JSON.stringify(values));
-          //finds user previous profile picture and delete it from the database
+          //Finds user previous profile picture and delete it from the database
           db.collection("users")
             .findOne(req.files.userId)
             .then((result) => {
-              console.log("before result: " + JSON.stringify(result));
-              console.log("before result: " + result.userProfile);
               const fileName = result.userProfile;
               if (fileName !== "default-profile.png") {
                 try {
                   fs.unlinkSync(`../public/${fileName}`);
                   console.log("successfully deleted");
                 } catch (err) {
-                  // handle the error
                   console.log(err);
                 }
               }
@@ -311,17 +306,17 @@ client.connect((error) => {
     }
   });
 
+  //Handles username changing
   app.post("/change-username", (req, res) => {
     const query = { _id: new ObjectID(req.body.userId) };
     const values = { $set: { username: req.body.username } };
-    console.log("username: " + JSON.stringify(req.body));
     db.collection("users")
       .updateOne(query, values)
       .then((result) => {
         res.send({
           success: true,
           username: req.body.username,
-          error: "username has been updated!",
+          error: "Username has been updated!",
         });
       })
       .catch(() =>
@@ -332,6 +327,7 @@ client.connect((error) => {
       );
   });
 
+  //Handles user email changing
   app.post("/change-email", (req, res) => {
     const query = { _id: new ObjectID(req.body.userId) };
     const values = { $set: { userEmail: req.body.userEmail } };
@@ -353,6 +349,7 @@ client.connect((error) => {
       );
   });
 
+  //Handles password changing
   app.post("/change-password", (req, res) => {
     const query = { _id: new ObjectID(req.body.userId) };
     const values = { $set: { userPassword: req.body.userPassword } };
@@ -372,6 +369,5 @@ client.connect((error) => {
         })
       );
   });
-
   app.listen(5000);
 });
